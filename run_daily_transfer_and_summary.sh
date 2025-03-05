@@ -107,7 +107,7 @@ fi
 # Run the Python script with output redirected to both console and log file
 log "Running SDR transcription workflow script"
 log "----------------------------------------"
-python "${SCRIPT_PATH}" --claude-api-key="${CLAUDE_API_KEY}" --host="${HOST}" --username="${USERNAME}" --key_path="${KEY_PATH}" --remote_dir="${REMOTE_DIR}" 2>&1 | tee -a "${LOG_FILE}"
+python "${SCRIPT_PATH}" --claude-api-key="${CLAUDE_API_KEY}" --host="${HOST}" --username="${USERNAME}" --key_path="${KEY_PATH}" --remote_dir="${REMOTE_DIR}" --cleanup 2>&1 | tee -a "${LOG_FILE}"
 PYTHON_EXIT_CODE=${PIPESTATUS[0]}
 log "----------------------------------------"
 

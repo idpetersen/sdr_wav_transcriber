@@ -144,27 +144,37 @@ class SDRTranscriptionWorkflow:
             self.logger.debug(traceback.format_exc())
             return None
 
-    def clear_remote_recordings(self):
+    def archive_remote_recordings(self):
         """
-        Optionally clear remote recordings directory after download.
+        Move remote recordings to archive directory after download.
         """
         if not self.cleanup:
             return
-        
         try:
+            remote_dir = self.config['remote_dir']
+            archive_dir = os.path.join(os.path.dirname(remote_dir.rstrip('/')), 'archive')
+            
+            # Check if archive directory exists, create if not
+            try:
+                self.sftp_client.stat(archive_dir)
+            except FileNotFoundError:
+                self.sftp_client.mkdir(archive_dir)
+                self.logger.info(f"Created archive directory: {archive_dir}")
+            
             # Change to remote recordings directory
-            self.sftp_client.chdir(self.config['remote_dir'])
+            self.sftp_client.chdir(remote_dir)
             
-            # Remove WAV files
+            # Move WAV files to archive
             wav_files = [f for f in self.sftp_client.listdir() if f.endswith('.wav')]
-            
             for wav_file in wav_files:
-                self.sftp_client.remove(wav_file)
+                self.sftp_client.rename(
+                    os.path.join(remote_dir, wav_file),
+                    os.path.join(archive_dir, wav_file)
+                )
             
-            self.logger.info(f"Removed {len(wav_files)} WAV files from remote directory")
-        
+            self.logger.info(f"Archived {len(wav_files)} WAV files to {archive_dir}")
         except Exception as e:
-            self.logger.error(f"Error clearing remote recordings: {e}")
+            self.logger.error(f"Error archiving remote recordings: {e}")
             self.logger.debug(traceback.format_exc())
 
     def transcribe_wav(self, wav_path):
@@ -228,7 +238,7 @@ class SDRTranscriptionWorkflow:
         """
         try:
             # Generate filename with current date
-            summary_filename = f"summary_{datetime.now().strftime('%Y%m%d')}.txt"
+            summary_filename = f"summary_{datetime.now().strftime('%Y%m%d')}.md"
             summary_path = self.summaries_dir / summary_filename
             
             # Write summary

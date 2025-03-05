@@ -51,25 +51,19 @@ class ClaudeHandler:
                 transcript = transcript[:max_transcript_length]
 
             # Construct the system prompt
-            system_prompt = """You are a police dispatch analyst who specializes in summarizing radio communications, identifying separate incidents, and providing clear summaries of police activities.
-Analyze and summarize the following police dispatch transcript.
-The transcript is formatted with timestamps [MM:SS.mmm --> MM:SS.mmm] followed by radio communications.
-Pay attention to the \\n characters as that denotes a new line
-IMPORTANT ANALYSIS GUIDELINES:
-1. Group communications into distinct "calls" or "incidents" based on:
-- Time gaps between transmissions (significant gaps often indicate different calls)
-- Continuity of unit identifiers (e.g., "Victor 4-7" indicates a specific unit)
-- References to the same incident, location, or situation
-2. For each identified call/incident, provide:
-- Time range (start and end timestamps)
-- Units involved (e.g., Victor numbers, other identifiers)
-- Nature of the call (if discernible)
-- Key details or developments
-- Resolution (if available)
-3. Use police/dispatch terminology appropriately in your summary
-- "RP" = Reporting Party
-- "Victor" units = patrol units
-- Code numbers may refer to specific types of calls"""
+            system_prompt = """
+Analyze this police dispatch transcript from [Department Name]. Identify and detail all incidents.
+Format each incident with:
+- Time range
+- Units involved
+- Nature of call
+- Details
+- Resolution (if any)
+Department terminology:
+- RP = Reporting Party
+- Victor units = patrol units
+- [Add any specific codes/terms for your department]
+Include ALL communications and preserve all technical details."""
 
             # Construct request payload
             payload = {

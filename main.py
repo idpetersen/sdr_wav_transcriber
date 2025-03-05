@@ -11,7 +11,6 @@ def main():
     parser.add_argument('--cleanup', 
                         action='store_true', 
                         help='Clean up remote recordings directory after download')
-    
     # Add Claude-specific arguments
     parser.add_argument('--claude-api-key',
                         default=os.environ.get('CLAUDE_API_KEY', ''),
