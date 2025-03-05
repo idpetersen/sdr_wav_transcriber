@@ -45,51 +45,59 @@ class ClaudeHandler:
             self.logger.info(f"Generating summary using Claude model: {self.model}")
             
             # Truncate very long transcripts to prevent API issues
-            max_transcript_length = 100000  # Claude can handle much longer context than Ollama
+            max_transcript_length = 100000
             if len(transcript) > max_transcript_length:
                 self.logger.warning(f"Truncating transcript from {len(transcript)} to {max_transcript_length} characters")
                 transcript = transcript[:max_transcript_length]
 
             # Construct the system prompt
             system_prompt = """You are a police dispatch analyst who specializes in summarizing radio communications, identifying separate incidents, and providing clear summaries of police activities.
-    Analyze and summarize the following police dispatch transcript.
-    The transcript is formatted with timestamps [MM:SS.mmm --> MM:SS.mmm] followed by radio communications.
-    Pay attention to the \\n characters as that denotes a new line
-    IMPORTANT ANALYSIS GUIDELINES:
-    1. Group communications into distinct "calls" or "incidents" based on:
-    - Time gaps between transmissions (significant gaps often indicate different calls)
-    - Continuity of unit identifiers (e.g., "Victor 4-7" indicates a specific unit)
-    - References to the same incident, location, or situation
-    2. For each identified call/incident, provide:
-    - Time range (start and end timestamps)
-    - Units involved (e.g., Victor numbers, other identifiers)
-    - Nature of the call (if discernible)
-    - Key details or developments
-    - Resolution (if available)
-    3. Use police/dispatch terminology appropriately in your summary
-    - "RP" = Reporting Party
-    - "Victor" units = patrol units
-    - Code numbers may refer to specific types of calls"""
+Analyze and summarize the following police dispatch transcript.
+The transcript is formatted with timestamps [MM:SS.mmm --> MM:SS.mmm] followed by radio communications.
+Pay attention to the \\n characters as that denotes a new line
+IMPORTANT ANALYSIS GUIDELINES:
+1. Group communications into distinct "calls" or "incidents" based on:
+- Time gaps between transmissions (significant gaps often indicate different calls)
+- Continuity of unit identifiers (e.g., "Victor 4-7" indicates a specific unit)
+- References to the same incident, location, or situation
+2. For each identified call/incident, provide:
+- Time range (start and end timestamps)
+- Units involved (e.g., Victor numbers, other identifiers)
+- Nature of the call (if discernible)
+- Key details or developments
+- Resolution (if available)
+3. Use police/dispatch terminology appropriately in your summary
+- "RP" = Reporting Party
+- "Victor" units = patrol units
+- Code numbers may refer to specific types of calls"""
 
-            # Construct request payload - fixing format to match API requirements
+            # Construct request payload
             payload = {
                 "model": self.model,
-                "system": system_prompt,
                 "messages": [
-                    {"role": "user", "content": transcript}
+                    {
+                        "role": "user", 
+                        "content": transcript
+                    }
                 ],
-                "max_tokens": self.max_tokens,
-                "temperature": self.temperature
+                "system": system_prompt,
+                "max_tokens": self.max_tokens
             }
             
-            # Set up headers
+            # Add temperature only if it's not the default (0.7)
+            if self.temperature != 0.7:
+                payload["temperature"] = self.temperature
+            
+            # Set up headers with the latest anthropic-version
             headers = {
-                "anthropic-version": "2023-06-01",
                 "content-type": "application/json",
-                "x-api-key": self.api_key
+                "x-api-key": f"{self.api_key}",
+                "anthropic-version": "2023-06-01",
             }
             
             self.logger.debug(f"Making API request to Claude with {len(transcript)} characters of transcript")
+            self.logger.debug(f"Headers passed: {headers}")
+            self.logger.debug(f"Payload structure: {json.dumps(payload, indent=2)[:1000]}...")
             
             # Make API request
             response = requests.post(
@@ -99,7 +107,11 @@ class ClaudeHandler:
             )
             
             # Check response
-            response.raise_for_status()
+            if response.status_code != 200:
+                self.logger.error(f"API Error: Status {response.status_code}")
+                self.logger.error(f"Response body: {response.text}")
+                return None
+                
             response_data = response.json()
             
             # Extract summary from response
@@ -114,8 +126,8 @@ class ClaudeHandler:
         except requests.RequestException as e:
             self.logger.error(f"Claude API request error: {e}")
             if hasattr(e, 'response') and e.response:
-                self.logger.debug(f"Response status: {e.response.status_code}")
-                self.logger.debug(f"Response body: {e.response.text[:500]}")
+                self.logger.error(f"Response status: {e.response.status_code}")
+                self.logger.error(f"Response body: {e.response.text}")
             return None
         except Exception as e:
             self.logger.error(f"Summary generation error: {e}")

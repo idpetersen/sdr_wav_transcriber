@@ -33,8 +33,8 @@ def main():
                         help='Dir where WAV/MP3 files are on remote host')
     parser.add_argument('--max-tokens',
                         type=int,
-                        default=300,
-                        help='Maximum tokens for summary generation (default: 300)')
+                        default=5000,
+                        help='Maximum tokens for summary generation (default: 5000)')
     parser.add_argument('--temperature',
                         type=float,
                         default=0.7,
