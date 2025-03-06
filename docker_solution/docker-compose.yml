@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  sdr-workflow:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ${SSH_KEY_PATH}:${SSH_KEY_PATH}
+      - ./.env:/app/.env
+    command: /app/.env
+    environment:
+      - BASE_DIR=/app/data
+    restart: unless-stopped

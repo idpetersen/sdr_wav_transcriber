@@ -1,0 +1,6 @@
+paramiko
+torch
+numpy
+requests
+setuptools-rust
+git+https://github.com/openai/whisper.git
